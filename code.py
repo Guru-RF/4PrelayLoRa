@@ -39,17 +39,14 @@ rf4.value = True
 time.sleep(0.01)
 
 ports = {
-  "1": rf1,
-  "2": rf2,
-  "3": rf3,
-  "4": rf4,
+  1: rf1,
+  2: rf2,
+  3: rf3,
+  4: rf4,
 }
 
 for number, port in ports.items():
-    port.value = False
-    time.sleep(0.01)
-
-ports[str(int(config.default_port))].value = True
+    port.value = config.map[number]['State']
 
 print(red(config.name + " -=- " + VERSION))
 
@@ -71,16 +68,20 @@ while True:
         if packet[:3] == (b'<\xaa\x01'):
                 rawdata = bytes(packet[3:]).decode('utf-8')
                 if rawdata.startswith(config.name):
-                    for number, port in ports.items():
-                        port.value = False
-                    try:
-                        ports[str(int(rawdata[-1]))].value = True
-                        print(purple("PORT REQ: Turned port " + str(int(rawdata[-1])) + " on"))
-                    except:
-                        print(purple("PORT REQ: Wrong Port NR Turned default port " + str(int(config.default_port)) + " on"))
-                        for number, port in ports.items():
-                            port.value = False
-                        ports[str(int(config.default_port))].value = True
+                    portnr = rawdata[4:5]
+                    value = rawdata[6:9]
+                    if value == "on":
+                      try:
+                          ports[int(portnr)].value = True
+                          print(purple("PORT REQ: Turned port " + portnr + " on"))
+                      except:
+                          print(purple("PORT REQ: Wrong port nr " + portnr))
+                    if value == "off":
+                      try:
+                          ports[int(portnr)].value = False
+                          print(purple("PORT REQ: Turned port " + portnr + " off"))
+                      except:
+                          print(purple("PORT REQ: Wrong port nr " + portnr))
                 else:
                     print(yellow("Received another switch port req packet: " + str(rawdata)))
         else:
